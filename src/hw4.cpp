@@ -181,14 +181,14 @@ private:
 public:
 	Person();
 	Person(int p, string fn, string ln, string em);
-	void setPid(int p);
-	void setFname(string fn);
-	void setLname(string ln);
-	void setEmail(string em);
-	int getPid();
-	const string getFname();
-	const string getLname();
-	const string getEmail();
+	void setPid(int p) {_pid = p;}
+	void setFname(string fn) {_fname = fn;}
+	void setLname(string ln) {_lname = ln;}
+	void setEmail(string em) {_email = em;}
+	int getPid() {return _pid;}
+	const string getFname() {return _fname;}
+	const string getLname() {return _lname;}
+	const string getEmail() {return _email;}
 };
 class Case
 {
@@ -207,36 +207,63 @@ private:
 public:
 	// need set/get cid, pid, diag, whoconf, casestatus
 	Case(){}
-	Case(int cid, int pid, Date date, int diag, int whoconf, int contacted);
-	void setContacted(int x);
-	void setCid(int);
-	void setPid(int);
-	void setDiag(int);
-	void setWhoConfirmed(int);
-	void setCaseStatus(int);
-	int getContacted();
-	int getCid();
-	int getPid();
-	int getDiag();
-	int getWhoConfirme();
-	int getCaseStatus();
+	Case(int cid, int pid, Date date, int diag, int whoconf, int contacted)
+	{
+		_cid = cid;
+		_pid = pid;
+		_diagDate = date;
+		_diagnosis = diag;
+		_whoConf = whoconf;
+		_contacted = contacted;
+		_caseStatus = 0;
+	}
+	void setContacted(int contacted) {_contacted = contacted;}
+	void setCid(int cid) {_cid = cid;}
+	void setPid(int pid) {_pid = pid;}
+	void setDiag(int diagnosis) {_diagnosis = diagnosis;}
+	void setWhoConfirmed(int docId) {_whoConf = docId;}
+	void setCaseStatus(int caseStatus) {_caseStatus = caseStatus;}
+	int getContacted() {return _contacted;}
+	int getCid() {return _cid;}
+	int getPid() {return _pid;}
+	int getDiag() {return _diagnosis;}
+	int getWhoConfirmed() {return _whoConf;}
+	int getCaseStatus() {return _caseStatus;}
 	/*
 	 * pre: parameter must be 0 to length-1 of vector of symptoms
 	 * post: symptom returned or empty string if parameter out of bounds
 	 */
-	string getSymptom(int); // location is index in vector
+	string getSymptom(int index) {return _symptoms[index];} // location is index in vector
 	int symptomCount() {return _symptoms.size();}
 	void addSymptom(string s) {_symptoms.push_back(s);} // actual symptom val
-	void removeSymptom(string); // actual symptom value
-	int getConfirmed(int x) {return _confirmed[x];}
+	void removeSymptom(string s) // actual symptom value
+	{
+		std::vector<string>::iterator vitr = _symptoms.begin();
+		while(vitr != _symptoms.end() && *vitr != s) {vitr++;}
+		if(*vitr == s) {_symptoms.erase(vitr);}
+	}
+	int getConfirmed(int index) {return _confirmed[index];}
 	int confirmedCount() {return _confirmed.size();}
-	void addConfirmed(int x) {_confirmed.push_back(x);}
-	void modifyConfirmed(int i) {_confirmed[i] = !(_confirmed[i]);}
+	void addConfirmed(int confirm) {_confirmed.push_back(confirm);}
+	void modifyConfirmed(int index) {_confirmed[index] = !(_confirmed[index]);}
 	/*
 	 * pre: parameter is the index in vector to remove
 	 * post:
 	 */
-	void removeConfirmed(int x); // x is the location of value to remove in vector
+	void removeConfirmed(int index) // x is the location of value to remove in vector
+	{
+		if(index < 0 || index > _confirmed.size()-1) {return;}
+		std::vector<int>::iterator vit = _confirmed.begin() + index;
+		_confirmed.erase(vit);
+	}
+	void addSeverity(int severity) {_severity.push_back(severity);}
+	void modifiySeverity(int index, int severity) {_severity[index] = severity;}
+	void removeSeverity(int index)
+	{
+		if(index < 0 || index > _severity.size()) {return;}
+		std::vector<int>::iterator vit = _severity.begin()+index;
+		_severity.erase(vit);
+	}
 };
 class AllPersons
 {
@@ -253,18 +280,76 @@ public:
 		}
 	}
 	void setPid(int i, int pid) {_persons[i]->setPid(pid);}
-	void setFname(int pid, string fname);
-	void setLname(int pid, string lname);
-	void setEmail(int pid, string email);
+	void setFname(int pid, string fname)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if((*vit)->getPid() == pid) {(*vit)->setFname(fname);}
+	}
+	void setLname(int pid, string lname)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if((*vit)->getPid() == pid) {(*vit)->setLname(lname);}
+	}
+	void setEmail(int pid, string email)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if((*vit)->getPid() == pid) {(*vit)->setEmail(email);}
+	}
 	const int getPid(int i) {return _persons[i]->getPid();}
-	const string getFname(int pid);
-	const string getLname(int pid);
-	const string getEmail(int pid);
-	void addPerson(int pid, string fname, string lname, string email);
-	void removePerson(int pid);
-	void modifyPersonEmail(int pid, string email);
-	void modifyPersonFname(int pid, string fname);
-	void modifyPersonLname(int pid, string lname);
+	const string getFname(int pid)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if((*vit)->getPid() == pid) {return (*vit)->getFname();}
+		return "";
+	}
+	const string getLname(int pid)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if((*vit)->getPid() == pid) {return (*vit)->getLname();}
+		return "";
+	}
+	const string getEmail(int pid)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if((*vit)->getPid() == pid) {return (*vit)->getEmail();}
+		return "";
+	}
+	void addPerson(int pid, string fname, string lname, string email)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if(vit != _persons.end()) {_persons.push_back(new Person(pid, fname, lname, email));}
+	}
+	void removePerson(int pid)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if((*vit)->getPid() == pid) {_persons.erase(vit);}
+	}
+	void modifyPersonEmail(int pid, string email)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if(vit != _persons.end()) {(*vit)->setEmail(email);}
+	}
+	void modifyPersonFname(int pid, string fname)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if(vit != _persons.end()) {(*vit)->setFname(fname);}
+	}
+	void modifyPersonLname(int pid, string lname)
+	{
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if(vit != _persons.end()) {(*vit)->setLname(lname);}
+	}
 };
 
 class AllCases
@@ -282,10 +367,30 @@ public:
 		}
 	}
 	// can make a case here and modify everything else
-	void addCase(int cid, int pid, string fname, string lname, string email) {_cases.push_back(new Case());}
-	void addToCaseContacted(int cid, int contacted);
-	void addDiagnosisInfo(int cid, string diagnosis, int whoDiagnosed);
-	void addToCaseSymptom(int cid, string symptom, int confirmed, int severity);
+	void addCase(int cid, int pid, string fname, string lname, string email)
+	{
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if(vit != _cases.end()) {_cases.push_back(new Case());}
+	}
+	void addToCaseContacted(int cid, int contacted)
+	{
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if(vit != _cases.end()) {(*vit)->setContacted(contacted);}
+	}
+	void addDiagnosisInfo(int cid, int diagnosis, int whoDiagnosed)
+	{
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if(vit != _cases.end()) {(*vit)->setWhoConfirmed(whoDiagnosed); (*vit)->setDiag(diagnosis);}
+	}
+	void addToCaseSymptom(int cid, string symptom, int confirmed, int severity)
+	{
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if(vit != _cases.end()) {(*vit)->addSymptom(symptom); (*vit)->addConfirmed(confirmed); (*vit)->addSeverity(severity);}
+	}
 	/*
 	 * More methods to write
 	 * think about EVERYTHING you'll need to modify or even MIGHT need to modify
@@ -369,32 +474,7 @@ void createCases(AllCases& cases, vector<string> data)
 	int length = data.size();
 	for(int i = 0; i < length; i++)
 	{
-		string line = data[i];
-		vector<string> split = splitLine(line);
-		int cid = stoi(split[0]), pid = stoi(split[1]), contact = stoi(split[5]), symptomCnt = stoi(split[6]);
-		string fname = split[2], lname = split[3], email = split[4];
-		vector<string> caseSymptoms;
-		vector<int> symptomConfirm, symptomSeverity;
-		for(int k = 7; k < symptomCnt; k++)
-		{
-			caseSymptoms.push_back(split[k]);
-			symptomConfirm.push_back(stoi(split[k+symptomCnt]));
-			symptomSeverity.push_back(stoi(split[k+(symptomCnt*2)]));
-		}
-		int index = 7+(symptomCnt*2), doctorId, originalCases, associatedCases;
-		string diagnosisDate = split[index++];
-		doctorId = stoi(split[index++]);
-		originalCases = stoi(split[index++]);
-		vector<int> originalPids, associatedPids;
-		// !!! CHANGE ME TO A WHILE LOOP !!!
-		for(int k = index; k < split.size(); k++) {originalPids.push_back(stoi(split[k])); index++;} // this is lazy coding. its hard to follow
-		associatedCases = stoi(split[index++]);
-		for(int k = index; k < split.size(); k++) {associatedPids.push_back(stoi(split[k])); index++;} // again, lazy and difficult to follow. Change it
-		int closed = stoi(split[index]);
-		cases.addCase(cid, pid, fname, lname, email);
-		cases.addDiagnosisInfo(cid, diagnosisDate, doctorId);
-		cases.addToCaseContacted(cid, contact);
-		for(int k = 0; k < symptomCnt; k++) {cases.addToCaseSymptom(cid, caseSymptoms[k], symptomConfirm[k], symptomSeverity[k]);}
+		//
 	}
 }
 int main()
