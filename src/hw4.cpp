@@ -10,7 +10,9 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <cstring>
+#include <string.h>
 using namespace std;
 
 /*
@@ -28,7 +30,9 @@ using namespace std;
  * string of diagnosis date (to be converted to date at some point)
  * diagnosis - (0 - !covid, 1 - covid)
  * diagnosing doctor's id
+ * # of original cases
  * list of original case ids
+ * # of associated cases
  * list of associated case ids
  * case status (is closed: 0 - open, 1 closed)
  */
@@ -193,6 +197,7 @@ private:
 	Date _diagDate;
 	int _diagnosis;
 	int _whoConf;
+	int _contacted;
 	vector<string> _symptoms; // <- {fatigue, cough, sore throat}
 	vector<int> _confirmed; // <- {1, 0, 0}
 	vector<int> _severity; // <- {2, 2, 4}
@@ -201,11 +206,15 @@ private:
 	int _caseStatus;
 public:
 	// need set/get cid, pid, diag, whoconf, casestatus
+	Case(){}
+	Case(int cid, int pid, Date date, int diag, int whoconf, int contacted);
+	void setContacted(int x);
 	void setCid(int);
 	void setPid(int);
 	void setDiag(int);
 	void setWhoConfirmed(int);
 	void setCaseStatus(int);
+	int getContacted();
 	int getCid();
 	int getPid();
 	int getDiag();
@@ -273,7 +282,7 @@ public:
 		}
 	}
 	// can make a case here and modify everything else
-	void addCase(int pid, string fname, string lname, string email);
+	void addCase(int cid, int pid, string fname, string lname, string email) {_cases.push_back(new Case());}
 	void addToCaseContacted(int cid, int contacted);
 	void addDiagnosisInfo(int cid, string diagnosis, int whoDiagnosed);
 	void addToCaseSymptom(int cid, string symptom, int confirmed, int severity);
@@ -281,13 +290,25 @@ public:
 	 * More methods to write
 	 * think about EVERYTHING you'll need to modify or even MIGHT need to modify
 	 */
+	// !!! FOR TESTING, DELETE ME !!!
+	void testPrint()
+	{
+		for(int i = 0; i < _cases.size(); i++)
+		{
+			int cid = _cases[i]->getCid(), pid = _cases[i]->getPid(), contacted = _cases[i]->getContacted();
+		}
+	}
 };
 class AllSymptoms
 {
 private:
 	vector<string> _symptoms;
 public:
-	//
+	AllSymptoms() {}
+	AllSymptoms(vector<string> symptoms) {_symptoms = symptoms;}
+	void setSymptoms(vector<string> symptoms) {_symptoms = symptoms;}
+	void addPossibleSymptom(string symptom) {_symptoms.push_back(symptom);}
+	string getSymptom(int index) {return _symptoms[index];}
 };
 Date operator+(int x, const Date& b)
 {
@@ -324,6 +345,58 @@ vector<string> readFile(istream& infile)
 	}
 	return lines;
 }
+vector<string> splitLine(string line)
+{
+	vector<string> splitLines;
+	int count = 0, length = line.length();
+	stringstream ss;
+	while(count < length)
+	{
+		char c = line[count];
+		if(c != ',') {ss << c;}
+		else
+		{
+			string t;
+			ss >> t;
+			splitLines.push_back(t);
+		}
+		count++;
+	}
+	return splitLines;
+}
+void createCases(AllCases& cases, vector<string> data)
+{
+	int length = data.size();
+	for(int i = 0; i < length; i++)
+	{
+		string line = data[i];
+		vector<string> split = splitLine(line);
+		int cid = stoi(split[0]), pid = stoi(split[1]), contact = stoi(split[5]), symptomCnt = stoi(split[6]);
+		string fname = split[2], lname = split[3], email = split[4];
+		vector<string> caseSymptoms;
+		vector<int> symptomConfirm, symptomSeverity;
+		for(int k = 7; k < symptomCnt; k++)
+		{
+			caseSymptoms.push_back(split[k]);
+			symptomConfirm.push_back(stoi(split[k+symptomCnt]));
+			symptomSeverity.push_back(stoi(split[k+(symptomCnt*2)]));
+		}
+		int index = 7+(symptomCnt*2), doctorId, originalCases, associatedCases;
+		string diagnosisDate = split[index++];
+		doctorId = stoi(split[index++]);
+		originalCases = stoi(split[index++]);
+		vector<int> originalPids, associatedPids;
+		// !!! CHANGE ME TO A WHILE LOOP !!!
+		for(int k = index; k < split.size(); k++) {originalPids.push_back(stoi(split[k])); index++;} // this is lazy coding. its hard to follow
+		associatedCases = stoi(split[index++]);
+		for(int k = index; k < split.size(); k++) {associatedPids.push_back(stoi(split[k])); index++;} // again, lazy and difficult to follow. Change it
+		int closed = stoi(split[index]);
+		cases.addCase(cid, pid, fname, lname, email);
+		cases.addDiagnosisInfo(cid, diagnosisDate, doctorId);
+		cases.addToCaseContacted(cid, contact);
+		for(int k = 0; k < symptomCnt; k++) {cases.addToCaseSymptom(cid, caseSymptoms[k], symptomConfirm[k], symptomSeverity[k]);}
+	}
+}
 int main()
 {
 	AllPersons persons;
@@ -344,11 +417,12 @@ int main()
 	infile.close(); infile.open(symptomfn);
 	vector<string> symptomList = readFile(infile);
 	infile.close();
-	int caseCnt = caseInfo.size(), symptomCount = symptomList.size();
+	symptoms.setSymptoms(symptomList);
+	/*int caseCnt = caseInfo.size(), symptomCount = symptomList.size();
 	cout << "Case info vector test" << endl;
 	for(int i = 0; i < caseCnt; i++) {cout << caseInfo[i] << endl;}
 	cout << "Symptom list vector test" << endl;
-	for(int i = 0; i < symptomCount; i++) {cout << symptomList[i] << endl;}
+	for(int i = 0; i < symptomCount; i++) {cout << symptomList[i] << endl;}*/ //!!! DELETE ME, THIS IS FOR TESTING !!!
 	cout << "compiled" << endl;
 	return 0;
 }
