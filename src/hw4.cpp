@@ -47,10 +47,23 @@ using namespace std;
  * 	- You aren't reading the data in correctly. You need to check if is contacted:
  * 	  -- if yes, there is a date and doctor id
  * 	  -- else, no date or doctor id
+ * 	  -- !!! NEED TO FIX THIS, DOCID THEN DIAGNOSIS !!!
  * Notes:
  * 	- What to code first:
  * 		- Finish adding the accessers/mutators first. Those are easy and will really shape what to do next on their own
  * 		- Create a method to read in data from the text files. Just make one method that returns a vector of strings?
+ * 	- Never pass a vector in/out
+ * 	Methods to be deleted before turning in (per class):
+ * 	-AllCases:
+ * 		-testPrint()
+ * 		-testPrint(int)
+ * 		-showAssociatedCases(int)
+ * 	-AllPersons:
+ * 		-testPrint()
+ * 	-Case:
+ * 		-testPrint()
+ * 	-Person:
+ * 		-testPrint()
  * =====================================================================================================================================================================
  */
 
@@ -59,7 +72,40 @@ class Date
 private:
 	int _m, _d, _y;
 	// Notice, these are private functions!!
-	void convert(string s){
+	void adjustDate()
+	{
+		int c1[] = {1, 3, 5, 7, 8, 10, 12}, c2[] = {4, 6, 9, 11};
+		int count = 0, length = 7, val = -1;
+		while(count < length && val == -1)
+		{
+			if(_m == c1[count])
+			{
+				val = c1[count];
+				_d++;
+				if(_d > 31)
+				{
+					_m++;
+					_d = 1;
+					if(_m > 12) {_m = 1; _y++;}
+				}
+			}
+			else if(count < 4 && _m == c2[count])
+			{
+				val = c2[count];
+				_d++;
+				if(_d > 30) {_m++; _d = 1;}
+			}
+			count++;
+		}
+		if(val == -1)
+		{
+			val = 2;
+			_d++;
+			if((_d > 28 && _y%4 == 0) || (_d > 27 && _y%4 != 0)) {_m++; _d = 1;}
+		}
+	}
+	void convert(string s)
+	{
 		char x[5]; // atoi stands for ascii to integer
 		// like stoi, string to integer
 		x[0] = s[0];   x[1] = s[1];  x[2] = '\0';
@@ -253,6 +299,7 @@ public:
 		_diagnosis = -1;
 		_caseStatus = 0;
 	}
+	void closeCase() {_caseStatus = !_caseStatus;}
 	void setContacted(int contacted) {_contacted = contacted;}
 	void setCid(int cid) {_cid = cid;}
 	void setPid(int pid) {_pid = pid;}
@@ -303,17 +350,17 @@ public:
 		_severity.erase(vit);
 	}
 	int getSeverity(int index) {return _severity[index];}
-	int getOrigPid(int index) {return _original[index];}
-	void addOrigPid(int pid) {_original.push_back(pid);}
-	void removeOrigPid(int index)
+	int getOrigCid(int index) {return _original[index];}
+	void addOrigCid(int cid) {_original.push_back(cid);}
+	void removeOrigCid(int index)
 	{
 		if(index < 0 || index > _original.size()) {return;}
 		std::vector<int>::iterator vit = _original.begin()+index;
 		_severity.erase(vit);
 	}
-	int getAssociatedPid(int index) {return _associated[index];}
-	void addAssociatedPid(int pid) {_associated.push_back(pid);}
-	void removeAssociatedPid(int index)
+	int getAssociatedCid(int index) {return _associated[index];}
+	void addAssociatedCid(int cid) {_associated.push_back(cid);}
+	void removeAssociatedCid(int index)
 	{
 		if(index < 0 || index > _associated.size()) {return;}
 		std::vector<int>::iterator vit = _associated.begin()+index;
@@ -566,17 +613,70 @@ public:
 			_cases[i]->testPrint();
 		}
 	}
-	void addToCaseOriginal(int cid, int pid)
+	void testPrint(int cid)
 	{
 		std::vector<Case*>::iterator vit = _cases.begin();
 		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
-		if(vit != _cases.end()) {(*vit)->addOrigPid(pid);}
+		if((*vit)->getCid() == cid)
+		{
+			(*vit)->testPrint();
+		}
 	}
-	void addToCaseAssociated(int cid, int pid)
+	void addToCaseOriginal(int cid, int assocCid)
 	{
 		std::vector<Case*>::iterator vit = _cases.begin();
 		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
-		if(vit != _cases.end()) {(*vit)->addAssociatedPid(pid);}
+		if((*vit)->getCid() == cid) {(*vit)->addOrigCid(assocCid);}
+	}
+	void addToCaseAssociated(int cid, int assocCid)
+	{
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if((*vit)->getCid() == cid) {(*vit)->addAssociatedCid(assocCid);}
+	}
+	bool isClosed(int cid)
+	{
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if((*vit)->getCid() == cid) {return (*vit)->getCaseStatus();}
+		return false;
+	}
+	void closeCase(int cid)
+	{
+		Case* t;
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++; t = (*vit);}
+		if((*vit)->getCid() == cid)
+		{
+			vector<int> assocCases;
+			int acnt = (*vit)->associatedCount(), count = 0;
+			while(count < acnt && isClosed((*vit)->getAssociatedCid(count))) {count++;}
+			if(count == acnt) {(*vit)->closeCase();}
+		}
+	}
+	void showAssociatedCases(int cid)
+	{
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if((*vit)->getCid() == cid)
+		{
+			int count = 0, lim = (*vit)->associatedCount();
+			cout << endl << "Associated PIDs" << endl << "===========================================" << endl;
+			while(count < lim) {cout << "CID: " << (*vit)->getAssociatedCid(count) << endl; count++;}
+			if(lim == 0) {cout << "No associated cases" << endl;}
+			cout << "===========================================" << endl << endl;
+		}
+	}
+	string showUncontacted()
+	{
+		string pids = "";
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end())
+		{
+			if(!(*vit)->getContacted()) {pids += (*vit)->getPid()+";";}
+			vit++;
+		}
+		return pids;
 	}
 };
 class AllSymptoms
@@ -589,6 +689,45 @@ public:
 	void setSymptoms(vector<string> symptoms) {_symptoms = symptoms;}
 	void addPossibleSymptom(string symptom) {_symptoms.push_back(symptom);}
 	string getSymptom(int index) {return _symptoms[index];}
+	int getSymptomCount() {return _symptoms.size();}
+};
+class Exceptions
+{
+private:
+	vector<string*> _exceptions;
+	char* _error;
+public:
+	Exceptions()
+	{
+		_error = nullptr;
+		_exceptions.push_back(new string("Cannot convert to integer exception"));
+	}
+	Exceptions(int e)
+	{
+		_exceptions.push_back(new string("Cannot convert to integer exception"));
+		_error = new char[_exceptions[e]->length()+1];
+		strcpy(_error, _exceptions[e]->c_str());
+	}
+	void setException(int e)
+	{
+		_error = new char[_exceptions[e]->length()+1];
+		strcpy(_error, _exceptions[e]->c_str());
+	}
+	char* throwException(int e)
+	{
+		_error = new char[_exceptions[e]->length()+1];
+		strcpy(_error, _exceptions[e]->c_str());
+		return _error;
+	}
+	char* getException() {return _error;}
+	bool isNumber(string data)
+	{
+		char* c = new char[data.length()+1];
+		int count = 0, length = data.length();
+		while(count < length && isdigit(c[count])) {count++;}
+		if(count == length) {return true;}
+		return false;
+	}
 };
 Date operator+(int x, const Date& b)
 {
@@ -609,6 +748,11 @@ ostream& operator<<(ostream& out, const Date& b)
 	out << "In operator <<" << endl;
 	out << b.getM() << " " << b.getD() << " " << b.getY() << endl;
 	//
+	return out;
+}
+ostream& operator<<(ostream& out, Exceptions e)
+{
+	out << e.getException() << endl;
 	return out;
 }
 vector<string> readFile(istream& infile)
@@ -805,6 +949,27 @@ void addCase(AllCases& cases, AllPersons& persons, string data)
 	}
 	persons.addPerson(pid, fname, lname, email);
 }
+void addSymptom(AllCases& cases, AllSymptoms& symptoms) // need to check if this is what is meant by menu
+{
+	string input;
+	int symptomCount = symptoms.getSymptomCount();
+	cout << "Possible symptoms" << endl << "========================" << endl;
+	for(int i = 0; i < symptomCount; i++) {cout << symptoms.getSymptom(i) << endl;}
+	cout << "Enter symptom to add or 0 to return to main menu: ";
+	getline(cin, input);
+	cout << endl;
+	if(input != "0")
+	{
+		int count = 0, length = input.length();
+		while(count < length && isdigit(input[count])) {count++;}
+		if(count == length && count != 0) {cout << "Cannot add integers as symptoms" << endl;}
+		else
+		{
+			symptoms.addPossibleSymptom(input);
+			cout << input << " was added as a symptom" << endl;
+		}
+	}
+}
 int main()
 {
 	AllPersons persons;
@@ -825,7 +990,12 @@ int main()
 	infile.close(); infile.open(symptomfn);
 	vector<string> symptomList = readFile(infile);
 	infile.close();
-	symptoms.setSymptoms(symptomList);
+	int symCount = symptomList.size();
+	for(int i = 0; i < symCount; i++)
+	{
+		symptoms.addPossibleSymptom(symptomList[i]);
+	}
+	//symptoms.setSymptoms(symptomList); // !!! This is for testing !!!
 	/*int caseCnt = caseInfo.size(), symptomCount = symptomList.size();
 	cout << "Case info vector test" << endl;
 	for(int i = 0; i < caseCnt; i++) {cout << caseInfo[i] << endl;}
@@ -839,7 +1009,31 @@ int main()
 		addCase(cases, persons, caseInfo[i]);
 		cout << "case " << i+1 << " was added" << endl;
 	}
-	cases.testPrint();
+/*	cases.testPrint();
 	persons.testPrint();
+	cases.testPrint(10);
+	cases.showAssociatedCases(10);
+	cases.testPrint(11);
+	cases.closeCase(10);
+	cases.testPrint(10);
+	cases.testPrint(11);
+	cases.showAssociatedCases(11);
+	cases.closeCase(11);
+	cases.testPrint(11);
+	cases.closeCase(10);
+	cases.testPrint(10);*/
+	string input = "1";
+	string options[] = {"Exit", "Add symptoms", "View open cases", "Show uncontacted patients", "Add Case", "Close case", "Modify case", "View person"};
+	int optionCount = *(&options + 1) - options;
+	while(input != "0")
+	{
+		for(int i = 0; i < optionCount; i++) {cout << to_string(i) << ": " << options[i] << endl;}
+		cout << "What would you like to do?: ";
+		getline(cin, input);
+		cout << endl;
+		if(input == "1") {addSymptom(cases, symptoms);}
+		else if(input == "0") {cout << "Exiting" << endl;}
+		else {cout << "Input: " << input << endl;}
+	}
 	return 0;
 }

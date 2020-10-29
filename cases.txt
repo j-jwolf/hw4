@@ -7,3 +7,5 @@
 7, 7, tom, doe, tdoe@abc.edu, 1, 1, cough, 1, 3, "08/20/2020", 210, 1, 0, 1, 8, 1
 8, 8, pam, smith, psmith@abc.edu, 1, 1, sore throat, 1, 2, "08/21/2020", 1, 210, 1, 7, 0, 1
 9, 8, pam, smith, psmith@abc.edu, 1, 1, fever or chills, 1, 4, "09/25/2020", 0, 101, 0, 0, 1
+10, 9, test, alex, atest@abc.edu, 1, 1, sore throat, 1, 1, "10/22/2020", 1, 100, 0, 1, 11, 0
+11, 10, test, anna, annatest@abc.edu, 1, 1, fever or chills, 1, 1, "10/23/2020", 1, 102, 0, 0, 0
