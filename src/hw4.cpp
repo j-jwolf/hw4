@@ -540,44 +540,60 @@ public:
 	// can make a case here and modify everything else
 	int getCaseCount() {return _cases.size();}
 	int getCid(int index) {return _cases[index]->getCid();}
-	void addCase(int cid, int pid, string date, int diag, int whoconf, int contacted)
+	bool addCase(int cid, int pid, string date, int diag, int whoconf, int contacted)
 	{
+		int added = 0;
 		if(_cases.size() == 0)
 		{
 			_cases.push_back(new Case(cid, pid, date, diag, whoconf, contacted));
+			added = 1;
 		}
 		else
 		{
-			std::vector<Case*>::iterator vit = _cases.begin();
-			while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
-			if(vit == _cases.end()) {_cases.push_back(new Case(cid, pid, date, diag, whoconf, contacted));}
+			if(!getCaseByCid(cid))
+			{
+				_cases.push_back(new Case(cid, pid, date, diag, whoconf, contacted));
+				added = 1;
+			}
 		}
+		return added;
 	}
-	void addCase(int cid, int pid, int diag, int whoconf, int contacted, int status)
+	bool addCase(int cid, int pid, int diag, int whoconf, int contacted, int status)
 	{
+		int added = 0;
 		if(_cases.size() == 0)
 		{
 			_cases.push_back(new Case(cid, pid, diag, whoconf, contacted, status));
+			added = 1;
 		}
 		else
 		{
-			std::vector<Case*>::iterator vit = _cases.begin();
-			while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
-			if(vit == _cases.end()) {_cases.push_back(new Case(cid, pid, diag, whoconf, contacted, status));}
+
+			if(!getCaseByCid(cid))
+			{
+				_cases.push_back(new Case(cid, pid, diag, whoconf, contacted, status));
+				added = 1;
+			}
 		}
+		return added;
 	}
-	void addCase(int cid, int pid)
+	bool addCase(int cid, int pid)
 	{
+		int added = 0;
 		if(_cases.size() == 0)
 		{
 			_cases.push_back(new Case(cid, pid));
+			added = 1;
 		}
 		else
 		{
-			std::vector<Case*>::iterator vit = _cases.begin();
-			while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
-			if(vit == _cases.end()) {_cases.push_back(new Case(cid, pid));}
+			if(!getCaseByCid(cid))
+			{
+				_cases.push_back(new Case(cid, pid));
+				added = 1;
+			}
 		}
+		return added;
 	}
 	void addToCaseContacted(int cid, int contacted)
 	{
