@@ -519,6 +519,14 @@ class AllCases
 {
 private:
 	vector<Case*> _cases;
+	Case* getCaseByCid(int cid)
+	{
+		Case* caseptr = nullptr;
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if((*vit)->getCid() == cid) {caseptr = (*vit);}
+		return caseptr;
+	}
 public:
 	AllCases() {}
 	~AllCases()
@@ -530,6 +538,8 @@ public:
 		}
 	}
 	// can make a case here and modify everything else
+	int getCaseCount() {return _cases.size();}
+	int getCid(int index) {return _cases[index]->getCid();}
 	void addCase(int cid, int pid, string date, int diag, int whoconf, int contacted)
 	{
 		if(_cases.size() == 0)
@@ -949,27 +959,6 @@ void addCase(AllCases& cases, AllPersons& persons, string data)
 	}
 	persons.addPerson(pid, fname, lname, email);
 }
-void addSymptom(AllCases& cases, AllSymptoms& symptoms) // need to check if this is what is meant by menu
-{
-	string input;
-	int symptomCount = symptoms.getSymptomCount();
-	cout << "Possible symptoms" << endl << "========================" << endl;
-	for(int i = 0; i < symptomCount; i++) {cout << symptoms.getSymptom(i) << endl;}
-	cout << "Enter symptom to add or 0 to return to main menu: ";
-	getline(cin, input);
-	cout << endl;
-	if(input != "0")
-	{
-		int count = 0, length = input.length();
-		while(count < length && isdigit(input[count])) {count++;}
-		if(count == length && count != 0) {cout << "Cannot add integers as symptoms" << endl;}
-		else
-		{
-			symptoms.addPossibleSymptom(input);
-			cout << input << " was added as a symptom" << endl;
-		}
-	}
-}
 int main()
 {
 	AllPersons persons;
@@ -995,45 +984,72 @@ int main()
 	{
 		symptoms.addPossibleSymptom(symptomList[i]);
 	}
-	//symptoms.setSymptoms(symptomList); // !!! This is for testing !!!
-	/*int caseCnt = caseInfo.size(), symptomCount = symptomList.size();
-	cout << "Case info vector test" << endl;
-	for(int i = 0; i < caseCnt; i++) {cout << caseInfo[i] << endl;}
-	cout << "Symptom list vector test" << endl;
-	for(int i = 0; i < symptomCount; i++) {cout << symptomList[i] << endl;}*/ //!!! DELETE ME, THIS IS FOR TESTING !!!
 	cout << "compiled" << endl;
-	//addCase(cases, persons, caseInfo[0]);
 	int caseCnt = caseInfo.size();
 	for(int i = 0; i < caseCnt; i++)
 	{
 		addCase(cases, persons, caseInfo[i]);
 		cout << "case " << i+1 << " was added" << endl;
 	}
-/*	cases.testPrint();
-	persons.testPrint();
-	cases.testPrint(10);
-	cases.showAssociatedCases(10);
-	cases.testPrint(11);
-	cases.closeCase(10);
-	cases.testPrint(10);
-	cases.testPrint(11);
-	cases.showAssociatedCases(11);
-	cases.closeCase(11);
-	cases.testPrint(11);
-	cases.closeCase(10);
-	cases.testPrint(10);*/
-	string input = "1";
-	string options[] = {"Exit", "Add symptoms", "View open cases", "Show uncontacted patients", "Add Case", "Close case", "Modify case", "View person"};
+	string input = "5";
+	string options[] = {"View a case file", "View uncontacted persons for a case", "Modify a case file", "View all open cases", "Exit"};
 	int optionCount = *(&options + 1) - options;
-	while(input != "0")
+	cout << "Covid-19 Case Tracker" << endl;
+	for(int i = 0; i < optionCount; i++) {cout << to_string(i+1) << ": " << options[i] << endl;}
+	cout << "==================================================" << endl << "Enter number of option to select: ";
+	getline(cin, input);
+	cout << endl;
+	while(input != "5")
 	{
-		for(int i = 0; i < optionCount; i++) {cout << to_string(i) << ": " << options[i] << endl;}
-		cout << "What would you like to do?: ";
-		getline(cin, input);
-		cout << endl;
-		if(input == "1") {addSymptom(cases, symptoms);}
-		else if(input == "0") {cout << "Exiting" << endl;}
-		else {cout << "Input: " << input << endl;}
+		//
 	}
+	// saves here
+	/*caseInfo.clear(); symptomList.clear();
+	for(int i = 0; i < symptoms.getSymptomCount(); i++) {symptomList.push_back(symptoms.getSymptom(i));}
+	for(int i = 0; i < cases.getCaseCount(); i++)
+	{
+		//
+	}*/
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
