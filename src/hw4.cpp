@@ -12,6 +12,7 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <ctime>
 #include <string.h>
 using namespace std;
 
@@ -50,7 +51,7 @@ using namespace std;
  * 	  -- !!! NEED TO FIX THIS, DOCID THEN DIAGNOSIS !!!
  * Notes:
  * 	- What to code first:
- * 		- Finish adding the accessers/mutators first. Those are easy and will really shape what to do next on their own
+ * 		- Finish adding the accessors/mutators first. Those are easy and will really shape what to do next on their own
  * 		- Create a method to read in data from the text files. Just make one method that returns a vector of strings?
  * 	- Never pass a vector in/out
  * 	- !!! Checks in the menu options are not working properly, nor are the loop structures !!! !!! URGENT !!!
@@ -102,7 +103,7 @@ private:
 		{
 			val = 2;
 			_d++;
-			if((_d > 28 && _y%4 == 0) || (_d > 27 && _y%4 != 0)) {_m++; _d = 1;}
+			if((_d > 29 && _y%4 == 0) || (_d > 28 && _y%4 != 0)) {_m++; _d = 1;}
 		}
 	}
 	void convert(string s)
@@ -545,6 +546,7 @@ private:
 		if(vit != _cases.end()) {caseptr = (*vit);}
 		return caseptr;
 	}
+	string noCaseFound(int cid) {return "No case with ID "+to_string(cid)+" was found";}
 public:
 	AllCases() {}
 	~AllCases()
@@ -554,6 +556,18 @@ public:
 		{
 			delete(_cases[i]);
 		}
+	}
+	string operator[](int cid)
+	{
+		string t = "";
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr)
+		{
+			t = "Case ID: "+to_string(caseptr->getCid())+" | Person ID: "+to_string(caseptr->getPid())+"\nNumber of original cases: ";
+			t += to_string(caseptr->originalCount())+" | Number of associated cases: "+to_string(caseptr->associatedCount());
+		}
+		else {t = "No case with ID "+to_string(cid)+" was found";}
+		return t;
 	}
 	// can make a case here and modify everything else
 	int getCaseCount() {return _cases.size();}
@@ -702,49 +716,62 @@ public:
 	}
 	string viewCase(int cid)
 	{
-		string temp = "";
+		string caseInfo = "";
 		Case* caseptr = getCaseByCid(cid);
 		if(caseptr)
 		{
-			temp = "Case ID: "+to_string(caseptr->getCid())+"; Patient ID: "+to_string(caseptr->getPid())+"\nOriginal Cases: ";
-			string orids = "", asids = "";
-			int ocnt = caseptr->originalCount();
-			int acnt = caseptr->associatedCount();
-			if(ocnt > 0 || acnt > 0)
+			string ids = "Case ID: "+to_string(caseptr->getCid())+" | Person ID: "+to_string(caseptr->getPid());
+			string orig, assoc;
+			if(caseptr->originalCount() > 0)
 			{
-				int count;
-				if(ocnt > acnt) {count = ocnt;}
-				else {count = acnt;}
-				for(int i = 0; i < count; i++)
+				orig = "Original case IDs: "+to_string(caseptr->getOrigCid(0));
+				int count = 1, length = caseptr->originalCount();
+				while(count < length)
 				{
-					if(count < ocnt) {orids += caseptr->getOrigCid(i)+";";}
-					if(count < acnt) {asids += caseptr->getAssociatedCid(i)+";";}
+					orig += " | "+to_string(caseptr->getOrigCid(count));
+					count++;
 				}
 			}
-			if(ocnt > 0) {temp += orids;}
-			else {temp += "No original cases";}
-			temp += "\nAssociated Cases: ";
-			if(acnt > 0) {temp += asids;}
-			else {temp += "No associated cases";}
+			else {orig = "No original cases";}
+			if(caseptr->associatedCount() > 0)
+			{
+				assoc = "Associated case IDs: "+to_string(caseptr->getAssociatedCid(0));
+				int count = 1, length = caseptr->associatedCount();
+				while(count < length)
+				{
+					assoc += " | "+to_string(caseptr->getAssociatedCid(count));
+					count++;
+				}
+			}
+			else {assoc = "No Associated Cases";}
+			caseInfo = ids+"\n"+orig+"\n"+assoc;
 		}
-		else {temp = "Case ID: "+to_string(cid)+" was not found";}
-		return temp;
+		else {caseInfo = noCaseFound(cid);}
+		return caseInfo;
 	}
 	string getUncontactedPids(int cid)
 	{
-		string assocCids = "";
+		string assocCids;
 		Case* caseptr = getCaseByCid(cid);
+		if(!caseptr) {return noCaseFound(cid);}
 		int acnt = caseptr->associatedCount();
 		if(acnt > 0)
 		{
+			assocCids = "";
 			for(int i = 0; i < acnt; i++)
 			{
 				Case* temp = getCaseByCid(caseptr->getAssociatedCid(i));
-				if(temp->getContacted() == 0) {assocCids += temp->getPid()+";";}
+				if(!temp->getContacted()) {assocCids += to_string(temp->getCid())+" ";}
 			}
+			if(assocCids.length() == 0) {assocCids = "No uncontacted persons in associated cases in case "+to_string(cid);}
 		}
-		else {assocCids = "No uncontacted persons in case "+cid;}
+		else {assocCids = "No uncontacted persons in associated cases in case "+to_string(cid);}
 		return assocCids;
+	}
+	int isOpen(int index)
+	{
+		if(_cases[index]->getCaseStatus()) {return -1;}
+		else {return _cases[index]->getCid();}
 	}
 };
 class AllSymptoms
@@ -1069,27 +1096,23 @@ void addCase(AllCases& cases, AllPersons& persons, string data)
 	persons.addPerson(pid, fname, lname, email);
 	cout << "Person " << pid << ", name: " << lname << ", " << fname << " with email " << email << " was added to case" << endl;
 }
-void viewCase(AllCases& cases)
+void clearMenu() // this is a function psuedo-clears the console. It just ends lines in the console so that the previous text is no longer visible
 {
-	string input, output = "", sent;
-	/*cout << "Enter case ID you would like to view or 0 to return";
-	getline(cin, input);
-	cout << endl;
-	if(input != "0")
-	{
-		int length = input.length(), count = 0;
-		char* c = new char[length+1];
-		strcpy(c, input.c_str());
-		while(count < length && isdigit(c[count])) {count++;}
-		if(count == length) {cout << cases.viewCase(stoi(input));}
-		else {cout << "Invalid case ID" << endl;}
-	}*/
-	while(sent != "0")
+	/*
+	 * This is the reason I implemented the option to save the session data in main. This way, the user won't have to scroll up to view information again. It's
+	 * stored in a text file for viewing longer than the program runs/console is open
+	 */
+	for(int i = 0; i < 15; i++) {cout << endl;}
+}
+string viewCase(AllCases& cases)
+{
+	string input, output = "";
+	clearMenu();
+	while(input != "0" && output == "")
 	{
 		cout << "Enter case ID you would like to view or 0 to return: ";
 		getline(cin, input);
-		sent = input;
-		cout << endl;
+		clearMenu();
 		if(input != "0")
 		{
 			int length = input.length(), count = 0;
@@ -1100,21 +1123,25 @@ void viewCase(AllCases& cases)
 			{
 				int cid = stoi(input);
 				output = cases.viewCase(cid);
-				cout << output << endl;
+				//cout << output << endl << endl;
+				string data = "View of case ID "+input+": "+output;
+				return data;
 			}
 			else {cout << input << " is not a valid integer" << endl;}
 		}
 		cin.clear();
 	}
+	return output;
 }
-void viewUncontactedInCase(AllCases& cases) // this doesn't work correctly. FIX IT
+string viewUncontactedInCase(AllCases& cases) // this doesn't work correctly. FIX IT
 {
 	string input, output = "";
+	clearMenu();
 	while(input != "0" && output == "")
 	{
-		cout << "Enter case ID of case to view uncontacted persons";
+		cout << "Enter case ID of case to view uncontacted persons: ";
 		getline(cin, input);
-		cout << endl;
+		clearMenu();
 		if(input != "0")
 		{
 			int length = input.length(), count = 0;
@@ -1125,12 +1152,67 @@ void viewUncontactedInCase(AllCases& cases) // this doesn't work correctly. FIX 
 			{
 				int cid = stoi(input);
 				output = cases.getUncontactedPids(cid);
-				cout << output << endl;
+				//cout << "Uncontacted IDs: " << output << endl << endl;
+				string data = "Uncontacted Person IDs for case "+input+": "+output;
+				return data;
 			}
 			else {cout << input << " is not a valid integer" << endl;}
 		}
 		cin.clear();
 	}
+	return output;
+}
+string modifyCase(AllCases& cases, vector<string>& sessionData)
+{
+	string input, output;
+	clearMenu();
+	while(input != "0" && output == "")
+	{
+		cout << "Enter the case ID to modify: ";
+		getline(cin, input);
+		clearMenu();
+		if(input != "0")
+		{
+			int count = 0, length = input.length();
+			char * c = new char[length+1];
+			strcpy(c, input.c_str());
+			while(count < length && isdigit(c[count])) {count++;}
+			if(count == length)
+			{
+				int cid = stoi(input);
+				string caseinfo = cases[cid];
+				stringstream ss;
+				for(int i = 0; i < 7; i++) {ss << caseinfo[i];}
+				ss >> output;
+			}
+			if(output != "No case")
+			{
+				output = "";
+				string options[] = {"Add element", "Change element", "Remove element"};
+			}
+		}
+	}
+	return output;
+}
+string showOpenCases(AllCases& cases, AllPersons& persons)
+{
+	string data;
+	int length = cases.getCaseCount();
+	for(int i = 0; i < length; i++)
+	{
+		int cid = cases.isOpen(i), pid;//
+	}
+	return data;
+}
+void writeSessionData(vector<string*>& sessionData)
+{
+	fstream file;
+	string fn = "session_data.txt";
+	file.open(fn, ios::out);
+	int length = sessionData.size();
+	for(int i = 0; i < length; i++) {file << *sessionData[i] << endl; delete(sessionData[i]);}
+	file << endl;
+	file.close();
 }
 int main()
 {
@@ -1166,26 +1248,78 @@ int main()
 	}
 	string input = "5";
 	string options[] = {"View a case file", "View uncontacted persons for a case", "Modify a case file", "View all open cases", "Exit"};
+
+	//======================== This is used for storing/writing out the current session's data, since the clear menu function is being used ===========================
+
+	/*
+	 * This was something I threw in because the menu got crowded with data and I didn't think it looked too much like a menu in that state. I have it turned off by
+	 * default in case you are doing large tests. I figured that would just increase runtime and would take up more memory for no reason. If you wanted to run the program
+	 * with it enabled, it can be turned on below
+	 */
+
+	/*
+	 *-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	 * 								>>> Storage enabled >>> */ bool sessionStorage = false; /* <<< here <<<
+	 *-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	 * */
+	//
+	vector<string*> sessionData;
+	if(sessionStorage)
+	{
+		tm* localTime;
+		time_t ctime = time(0);
+		localTime = localtime(&ctime);
+		int d = localTime->tm_mday, m = 1+localTime->tm_mon, y = 1900+localTime->tm_year;
+		Date date(m, d, y);
+		int hr = localTime->tm_hour, min = localTime->tm_min, s = localTime->tm_sec;
+		string minstr, secstr;
+		if(to_string(s).length() == 1) {secstr = "0"+to_string(s);}
+		else {secstr = to_string(s);}
+		if(to_string(min).length() == 1) {minstr = "0"+to_string(min);}
+		else {minstr = to_string(min);}
+		string after;
+		if(hr > 12) {hr -= 12; after = "PM";}
+		else {after = "AM";}
+		string time = to_string(hr)+":"+minstr+":"+secstr+" "+after;
+		string sessionStart = "Session start time: "+date.getDate()+" "+time;
+		sessionData.push_back(new string(sessionStart));
+	}
+	//=================================================================================================================================================================
+
 	int optionCount = *(&options + 1) - options;
 	cout << endl << "Debug test print" << endl << "////////////////////////////////" << endl;
 	for(int i = 0; i < cases.getCaseCount(); i++) {cases.testPrint(i);}
 	cout << "End of test print" << endl << "/////////////////////////////" << endl << endl;
 	cout << "Covid-19 Case Tracker" << endl;
 	for(int i = 0; i < optionCount; i++) {cout << to_string(i+1) << ": " << options[i] << endl;}
-	cout << "==================================================" << endl << "Enter number of option to select: ";
+	cout << "==================================================" << endl << endl << "Enter number of option to select: ";
 	getline(cin, input);
 	cout << endl;
 	while(input != "5")
 	{
-		if(input == "1") {viewCase(cases);}
-		else if(input == "2") {viewUncontactedInCase(cases);}
+		string result;
+		if(input == "1") {result = viewCase(cases);}
+		else if(input == "2") {result = viewUncontactedInCase(cases);}
 		else {input = "5";} // this is for testing to stop accidental infinite loops
 		cin.clear();
-		cout << "Enter of option to select: ";
+		clearMenu();
+		cout << result << endl << "Press enter when done viewing results" << endl;
+		while(input != "") {cin.clear(); getline(cin, input);}
+		clearMenu();
+		for(int i = 0; i < optionCount; i++) {cout << to_string(i+1) << ": " << options[i] << endl;}
+		cout << endl;
+		cout << "==================================================" << endl << endl << "Enter number of option to select: ";
 		getline(cin, input);
 		cout << endl;
+
+		//========================================================== For session data =================================================================================
+		if(sessionStorage) {if(result != "") {sessionData.push_back(new string(result));}}
+		//=============================================================================================================================================================
 	}
 	// saves here
+	clearMenu();
+	cout << "Exiting" << endl;
+	if(sessionStorage && sessionData.size() > 1) {cout << "Writing session data" << endl; writeSessionData(sessionData); cout << "Session data written" << endl;}
 	/*caseInfo.clear(); symptomList.clear();
 	for(int i = 0; i < symptoms.getSymptomCount(); i++) {symptomList.push_back(symptoms.getSymptom(i));}
 	for(int i = 0; i < cases.getCaseCount(); i++)

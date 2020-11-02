@@ -1,0 +1,9 @@
+Session start: 10/03/2020 2:4:2 PM
+Uncontacted Person IDs for case 7: No uncontacted persons in associated cases in case 7
+Uncontacted Person IDs for case 5: 6 
+Uncontacted Person IDs for case 123: No case with ID 123 was found
+View of case ID 5: Case ID: 5 | Person ID: 5
+Original case IDs: 1
+Associated case IDs: 6
+Uncontacted Person IDs for case 8: No uncontacted persons in associated cases in case 8
+
