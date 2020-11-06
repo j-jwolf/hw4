@@ -316,6 +316,7 @@ public:
 	}
 	void closeCase() {_caseStatus = !_caseStatus;}
 	void setContacted(int contacted) {_contacted = contacted;}
+	void contacted() {_contacted = !_contacted;}
 	void setCid(int cid) {_cid = cid;}
 	void setPid(int pid) {_pid = pid;}
 	void setDiag(int diagnosis) {_diagnosis = diagnosis;}
@@ -428,12 +429,22 @@ public:
 		if(_caseStatus) {cout << "Yes";}
 		else {cout << "No";}
 		cout << endl;
+		cout << "Case status: " << _caseStatus << endl;
 	}
 };
 class AllPersons
 {
 private:
 	vector<Person*> _persons; // or vector<*Person>
+	Person* getPersonByPid(int pid)
+	{
+		Person* personptr = nullptr;
+		std::vector<Person*>::iterator vit = _persons.begin();
+		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
+		if((*vit)->getPid() == pid) {personptr = (*vit);}
+		return personptr;
+	}
+	string noCaseFound(int pid) {return "No person with ID "+to_string(pid)+" was found";}
 public:
 	AllPersons() {}
 	~AllPersons()
@@ -447,55 +458,48 @@ public:
 	void setPid(int i, int pid) {_persons[i]->setPid(pid);}
 	void setFname(int pid, string fname)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if((*vit)->getPid() == pid) {(*vit)->setFname(fname);}
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {personptr->setFname(fname);}
 	}
 	void setLname(int pid, string lname)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if((*vit)->getPid() == pid) {(*vit)->setLname(lname);}
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {personptr->setLname(lname);}
 	}
 	void setEmail(int pid, string email)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if((*vit)->getPid() == pid) {(*vit)->setEmail(email);}
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {personptr->setEmail(email);}
 	}
 	const int getPid(int i) {return _persons[i]->getPid();}
 	const string getFname(int pid)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if((*vit)->getPid() == pid) {return (*vit)->getFname();}
-		return "";
+		string fname = "";
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {fname = personptr->getFname();}
+		return fname;
 	}
 	const string getLname(int pid)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if((*vit)->getPid() == pid) {return (*vit)->getLname();}
-		return "";
+		string lname = "";
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {lname = personptr->getLname();}
+		return lname;
 	}
 	const string getEmail(int pid)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if((*vit)->getPid() == pid) {return (*vit)->getEmail();}
-		return "";
+		string email = "";
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {email = personptr->getEmail();}
+		return email;
 	}
 	void addPerson(int pid, string fname, string lname, string email)
 	{
-		if(_persons.size() == 0)
-		{
-			_persons.push_back(new Person(pid, fname, lname, email));
-		}
+		if(_persons.size() == 0) {_persons.push_back(new Person(pid, fname, lname, email));}
 		else
 		{
-			std::vector<Person*>::iterator vit = _persons.begin();
-			while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-			if(vit == _persons.end()) {_persons.push_back(new Person(pid, fname, lname, email));}
+			Person* personptr = getPersonByPid(pid);
+			if(!personptr) {_persons.push_back(new Person(pid, fname, lname, email));}
 		}
 	}
 	void removePerson(int pid)
@@ -506,21 +510,18 @@ public:
 	}
 	void modifyPersonEmail(int pid, string email)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if(vit != _persons.end()) {(*vit)->setEmail(email);}
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {personptr->setEmail(email);}
 	}
 	void modifyPersonFname(int pid, string fname)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if(vit != _persons.end()) {(*vit)->setFname(fname);}
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {personptr->setFname(fname);}
 	}
 	void modifyPersonLname(int pid, string lname)
 	{
-		std::vector<Person*>::iterator vit = _persons.begin();
-		while(vit != _persons.end() && (*vit)->getPid() != pid) {vit++;}
-		if(vit != _persons.end()) {(*vit)->setLname(lname);}
+		Person* personptr = getPersonByPid(pid);
+		if(personptr) {personptr->setLname(lname);}
 	}
 	void testPrint()
 	{
@@ -543,7 +544,7 @@ private:
 		Case* caseptr = nullptr;
 		std::vector<Case*>::iterator vit = _cases.begin();
 		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
-		if(vit != _cases.end()) {caseptr = (*vit);}
+		if((*vit)->getCid() == cid) {caseptr = (*vit);}
 		return caseptr;
 	}
 	string noCaseFound(int cid) {return "No case with ID "+to_string(cid)+" was found";}
@@ -571,7 +572,134 @@ public:
 	}
 	// can make a case here and modify everything else
 	int getCaseCount() {return _cases.size();}
+	void setCid(int index, int cid) {_cases[index]->setCid(cid);}
+	void setCasePid(int cid, int pid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {caseptr->setPid(pid);}
+	}
+	void setCaseDiagnosis(int cid, int diagnosis)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {caseptr->setDiag(diagnosis);}
+	}
+	void setDoctorId(int cid, int docid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {caseptr->setWhoConfirmed(docid);}
+	}
+	void setContacted(int cid, int contacted)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {caseptr->setContacted(contacted);}
+	}
+	void setContacted(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {caseptr->contacted();}
+	}
+	void addSymptom(int cid, string symptom, int confirmed, int severity)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr)
+		{
+			caseptr->addSymptom(symptom);
+			caseptr->addConfirmed(confirmed);
+			caseptr->addSeverity(severity);
+		}
+	}
 	int getCid(int index) {return _cases[index]->getCid();}
+	int getPid(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getPid();}
+		else {return -1;}
+	}
+	string getDate(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getDiagDate();}
+		return "";
+	}
+	int getCaseDiagnosis(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getDiag();}
+		return -1;
+	}
+	int getDoctorId(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getWhoConfirmed();}
+		return -1;
+	}
+	bool isClosed(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getCaseStatus();}
+		return false;
+	}
+	int caseStatus(int index) {return !_cases[index]->getCaseStatus();}
+	int caseExists(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return 1;}
+		else {return 0;}
+	}
+	int getContacted(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getContacted();}
+		return -1;
+	}
+	int getCaseSymptomCount(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->symptomCount();}
+		return -1;
+	}
+	string getSymptom(int cid, int index)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getSymptom(index);}
+		return "";
+	}
+	int getConfirmed(int cid, int index)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getConfirmed(index);}
+		return -1;
+	}
+	int getSeverity(int cid, int index)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getSeverity(index);}
+		return -1;
+	}
+	int getCaseOriginalCount(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->originalCount();}
+		return -1;
+	}
+	int getOriginalCase(int cid, int index)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getOrigCid(index);}
+		return -1;
+	}
+	int getCaseAssociatedCount(int cid)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->associatedCount();}
+		return -1;
+	}
+	int getAssociatedCase(int cid, int index)
+	{
+		Case* caseptr = getCaseByCid(cid);
+		if(caseptr) {return caseptr->getAssociatedCid(index);}
+		return -1;
+	}
 	void addCase(int cid, int pid, string date, int diag, int whoconf, int contacted)
 	{
 		if(_cases.size() == 0) {_cases.push_back(new Case(cid, pid, date, diag, whoconf, contacted));}
@@ -641,8 +769,8 @@ public:
 	void setCaseStatus(int cid, int status)
 	{
 		std::vector<Case*>::iterator vit = _cases.begin();
-		while(vit != _cases.end() && cid != (*vit)->getCaseStatus()) {vit++;}
-		if(vit != _cases.end()) {(*vit)->setCaseStatus(status);}
+		while(vit != _cases.end() && (*vit)->getCid() != cid) {vit++;}
+		if((*vit)->getCid() == cid) {(*vit)->setCaseStatus(status);}
 	}
 	/*
 	 * More methods to write
@@ -673,12 +801,6 @@ public:
 	{
 		Case* caseptr = getCaseByCid(cid);
 		if(caseptr) {caseptr->addAssociatedCid(assocCid);}
-	}
-	bool isClosed(int cid)
-	{
-		Case* caseptr = getCaseByCid(cid);
-		if(caseptr) {return caseptr->getCaseStatus();}
-		return false;
 	}
 	void closeCase(int cid)
 	{
@@ -768,10 +890,23 @@ public:
 		else {assocCids = "No uncontacted persons in associated cases in case "+to_string(cid);}
 		return assocCids;
 	}
-	int isOpen(int index)
+	int countOpenCases()
 	{
-		if(_cases[index]->getCaseStatus()) {return -1;}
-		else {return _cases[index]->getCid();}
+		int openCnt = 0, length = _cases.size();
+		for(int i = 0; i < length; i++) {if(caseStatus(i)) {openCnt++; cout << "open case id: " << _cases[i]->getCid();}}
+		if(openCnt > 0) {cout << endl;}
+		return openCnt;
+	}
+	string getOpenCases()
+	{
+		string cids;
+		std::vector<Case*>::iterator vit = _cases.begin();
+		while(vit != _cases.end())
+		{
+			if(!(*vit)->getCaseStatus()) {cids += to_string((*vit)->getCid())+" ";}
+			vit++;
+		}
+		return cids;
 	}
 };
 class AllSymptoms
@@ -806,6 +941,16 @@ ostream& operator<<(ostream& out, const Date& b)
 	out << b.getM() << " " << b.getD() << " " << b.getY() << endl;
 	//
 	return out;
+}
+int isDigit(const string& input)
+{
+	int length = input.length();
+	char* c = new char[length+1];
+	strcpy(c, input.c_str());
+	int count = 0;
+	while(count < length && isdigit(c[count])) {count++;}
+	if(count == length) {return 1;}
+	return 0;
 }
 vector<string> readFile(istream& infile)
 {
@@ -921,7 +1066,7 @@ void addCaseRew(AllCases& cases, AllPersons& persons, string data)
 		cout << "date: " << date << endl;
 		diagnosis = stoi(split[index++]);
 		cout << "diagnosis: " << diagnosis << endl;
-		doctor = -1; //index++;
+		doctor = -1; index++;
 		cases.addDiagnosisInfo(cid, diagnosis, doctor);
 	}
 	int origCaseCount = stoi(split[index++]);
@@ -945,6 +1090,8 @@ void addCaseRew(AllCases& cases, AllPersons& persons, string data)
 		}
 	}
 	int status = stoi(split[index]);
+	cout << "Case Status: " << status << endl;
+	cout << "Original case count: " << origCaseCount << endl << "Associated case count: " << assocCaseCount << endl;
 	cases.setCaseStatus(cid, status);
 }
 void addCase(AllCases& cases, AllPersons& persons, string data)
@@ -1162,7 +1309,13 @@ string viewUncontactedInCase(AllCases& cases) // this doesn't work correctly. FI
 	}
 	return output;
 }
-string modifyCase(AllCases& cases, vector<string>& sessionData)
+string modifyCase(AllCases& cases, int cid)
+{
+	string result;
+	//
+	return result;
+}
+string modify(AllCases& cases, vector<string>& sessionData)
 {
 	string input, output;
 	clearMenu();
@@ -1171,37 +1324,88 @@ string modifyCase(AllCases& cases, vector<string>& sessionData)
 		cout << "Enter the case ID to modify: ";
 		getline(cin, input);
 		clearMenu();
-		if(input != "0")
+		int valid = isDigit(input);
+		if(valid)
 		{
-			int count = 0, length = input.length();
-			char * c = new char[length+1];
-			strcpy(c, input.c_str());
-			while(count < length && isdigit(c[count])) {count++;}
-			if(count == length)
+			int cid = stoi(input);
+			if(cases.caseExists(cid))
 			{
-				int cid = stoi(input);
-				string caseinfo = cases[cid];
-				stringstream ss;
-				for(int i = 0; i < 7; i++) {ss << caseinfo[i];}
-				ss >> output;
+				string caseVars[] = {"Case ID", "Person ID", "Diagnosis Date", "Diagnosis", "Doctor ID", "Symptoms", "Original Cases", "Associated Cases", "Case Status"};
+				int origCount = cases.getCaseOriginalCount(cid), assocCount = cases.getCaseAssociatedCount(cid);
+				cout << "1: this case" << endl << "2: original cases" << endl << "3: associated cases" << endl;
+				cout << "What would you like to modify?: ";
+				getline(cin, input);
+				cout << endl;
 			}
-			if(output != "No case")
-			{
-				output = "";
-				string options[] = {"Add element", "Change element", "Remove element"};
-			}
+			else {cout << "Case with ID " << cid << " does not exist" << endl;}
 		}
+		else {cout << input << " is not a valid integer" << endl;}
 	}
 	return output;
+}
+int splitCids(const string& t, int& index)
+{
+	cout << "test -- t: " << t << endl;
+	int cid = -1, length = t.length();
+	stringstream ss(t);
+	string buff = "";
+	char* c = new char[length+1];
+	strcpy(c, t.c_str());
+	while(index < length && cid == -1)
+	{
+		cout << "c[" << index << "]: " << c[index] << endl;
+		if(c[index] != ' ') {buff += c[index];}
+		else
+		{
+			if(buff != " " && buff != "") {cid = stoi(buff);}
+		}
+		index++;
+	}
+	return cid;
 }
 string showOpenCases(AllCases& cases, AllPersons& persons)
 {
 	string data;
-	int length = cases.getCaseCount();
-	for(int i = 0; i < length; i++)
+	int length = cases.countOpenCases();
+	if(length > 0)
 	{
-		int cid = cases.isOpen(i), pid;//
+		data = "There are "+to_string(length)+" open cases\n----------------------------------------------\n";
+		string cids = cases.getOpenCases();
+		int count = 0, index = 0;
+		while(count < length)
+		{
+			int cid = splitCids(cids, index);
+			if(cid != -1)
+			{
+				int pid = cases.getPid(cid), contacted = cases.getContacted(cid);
+				string fname = persons.getFname(pid), lname = persons.getLname(pid);
+				data += "Case ID: "+to_string(cid)+", Person ID: "+to_string(pid)+"\nName: "+lname+", "+fname+"\nContacted?: ";
+				if(contacted) {data += "Yes";}
+				else {data += "No";}
+				data += "\n----------------------------------------------";
+				count++;
+				if(count < length) {data += "\n";}
+			}
+		}
 	}
+	/*if(length > 0)
+	{
+		data = "There are "+to_string(length)+" open cases\n----------------------------------------------\n";
+		for(int i = 0; i < length; i++)
+		{
+			int status = cases.caseStatus(i);
+			if(status)
+			{
+				int cid = cases.getCid(i), pid = cases.getPid(cid), contacted = cases.getContacted(cid);
+				string fname = persons.getFname(pid), lname = persons.getLname(pid);
+				data += "Case ID: "+to_string(cid)+", Person ID: "+to_string(pid)+"\nName: "+lname+", "+fname+"\nContacted?: ";
+				if(contacted) {data += "Yes";}
+				else {data += "No";}
+				data += "\n----------------------------------------------\n";
+			}
+		}
+	}*/
+	else {data = "There are no open cases";}
 	return data;
 }
 void writeSessionData(vector<string*>& sessionData)
@@ -1210,9 +1414,47 @@ void writeSessionData(vector<string*>& sessionData)
 	string fn = "session_data.txt";
 	file.open(fn, ios::out);
 	int length = sessionData.size();
-	for(int i = 0; i < length; i++) {file << *sessionData[i] << endl; delete(sessionData[i]);}
+	for(int i = 0; i < length; i++) {file << *sessionData[i] << endl; delete(sessionData[i]); sessionData[i] = nullptr;}
 	file << endl;
 	file.close();
+}
+void writeSymptoms(AllSymptoms& symptoms, ostream& outfile)
+{
+	int count = 0, symptomCount = symptoms.getSymptomCount();
+	while(count < symptomCount)
+	{
+		string line = symptoms.getSymptom(count);
+		outfile << line << endl;
+		count++;
+	}
+	outfile << endl;
+}
+void writeCaseData(AllCases& cases, AllPersons& persons, ostream& outfile)
+{
+	int count = 0, caseCount = cases.getCaseCount();
+	while(count < caseCount)
+	{
+		string line = "";
+		int cid = cases.getCid(count), pid = cases.getPid(cid);
+		line += to_string(cid)+", "+to_string(pid)+", ";
+		line += persons.getFname(pid)+", "+persons.getLname(pid)+", "+persons.getEmail(pid)+", ";
+		int symptomCount = cases.getCaseSymptomCount(cid);
+		for(int i = 0; i < symptomCount; i++) {line += cases.getSymptom(cid, i)+", ";}
+		for(int i = 0; i < symptomCount; i++) {line += to_string(cases.getConfirmed(cid, i))+", ";}
+		for(int i = 0; i < symptomCount; i++) {line += to_string(cases.getSeverity(cid, i))+", ";} // find a better way to do this
+		line += cases.getDate(cid)+", ";
+		line += cases.getCaseDiagnosis(cid)+", ";
+		line += cases.getDoctorId(cid)+", ";
+		int originalCnt = cases.getCaseOriginalCount(cid), assocCount = cases.getCaseAssociatedCount(cid);
+		line += to_string(originalCnt);
+		for(int i = 0; i < originalCnt; i++) {line += to_string(cases.getOriginalCase(cid, i));}
+		line += to_string(assocCount);
+		for(int i = 0; i < assocCount; i++) {line += to_string(cases.getAssociatedCase(cid, i));}
+		line += to_string(cases.isClosed(cid));
+		outfile << line << endl;
+		count++;
+	}
+	outfile << endl;
 }
 int main()
 {
@@ -1246,20 +1488,18 @@ int main()
 		addCaseRew(cases, persons, caseInfo[i]);
 		cout << "case " << i+1 << " was added" << endl;
 	}
-	string input = "5";
-	string options[] = {"View a case file", "View uncontacted persons for a case", "Modify a case file", "View all open cases", "Exit"};
 
 	//======================== This is used for storing/writing out the current session's data, since the clear menu function is being used ===========================
 
 	/*
-	 * This was something I threw in because the menu got crowded with data and I didn't think it looked too much like a menu in that state. I have it turned off by
-	 * default in case you are doing large tests. I figured that would just increase runtime and would take up more memory for no reason. If you wanted to run the program
-	 * with it enabled, it can be turned on below
+	 * This was something I implemented in because the menu got crowded with data and I didn't think it looked too much like a menu in that state. It is disabled by
+	 * default in case you are doing large tests. I figured that would just increase runtime and would take up more memory for no reason. If you wanted to run the
+	 * program with it enabled, it can be turned on below
 	 */
-
+	//                          !!! MAKE SURE THAT BOOL IS SET TO FALSE AND THIS COMMENT IS DELETED BEFORE TURNING IN !!!
 	/*
 	 *-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-	 * 								>>> Storage enabled >>> */ bool sessionStorage = false; /* <<< here <<<
+	 * 								>>> Data log >>> */ bool sessionStorage = false; /* <<< enabled here <<<
 	 *-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 	 * */
 	//
@@ -1281,11 +1521,13 @@ int main()
 		if(hr > 12) {hr -= 12; after = "PM";}
 		else {after = "AM";}
 		string time = to_string(hr)+":"+minstr+":"+secstr+" "+after;
-		string sessionStart = "Session start time: "+date.getDate()+" "+time;
+		string sessionStart = "Session start time: "+date.getDate()+" "+time+"\n";
 		sessionData.push_back(new string(sessionStart));
 	}
 	//=================================================================================================================================================================
 
+	string input = "5";
+	string options[] = {"View a case file", "View uncontacted persons for a case", "Modify a case file", "View all open cases", "Exit"};
 	int optionCount = *(&options + 1) - options;
 	cout << endl << "Debug test print" << endl << "////////////////////////////////" << endl;
 	for(int i = 0; i < cases.getCaseCount(); i++) {cases.testPrint(i);}
@@ -1297,14 +1539,17 @@ int main()
 	cout << endl;
 	while(input != "5")
 	{
+		int option;
 		string result;
-		if(input == "1") {result = viewCase(cases);}
-		else if(input == "2") {result = viewUncontactedInCase(cases);}
-		else {input = "5";} // this is for testing to stop accidental infinite loops
+		if(input == "1") {result = viewCase(cases); option = 0;}
+		else if(input == "2") {result = viewUncontactedInCase(cases); option = 1;}
+		else if(input == "4") {result = showOpenCases(cases, persons); option = 3;}
+		else {input = "5"; option = 4;} // this is for testing to stop accidental infinite loops
 		cin.clear();
 		clearMenu();
-		cout << result << endl << "Press enter when done viewing results" << endl;
+		cout << result << endl << "Press enter when done viewing results";
 		while(input != "") {cin.clear(); getline(cin, input);}
+		cout << endl;
 		clearMenu();
 		for(int i = 0; i < optionCount; i++) {cout << to_string(i+1) << ": " << options[i] << endl;}
 		cout << endl;
@@ -1312,20 +1557,45 @@ int main()
 		getline(cin, input);
 		cout << endl;
 
-		//========================================================== For session data =================================================================================
-		if(sessionStorage) {if(result != "") {sessionData.push_back(new string(result));}}
+
+		//============================================================== For data log =================================================================================
+		if(sessionStorage)
+		{
+			if(result != "" && option != 4)
+			{
+				string action = "Action: "+options[option];
+				sessionData.push_back(new string(action));
+				sessionData.push_back(new string("=============================================="));
+				sessionData.push_back(new string(result));
+				sessionData.push_back(new string("==============================================\n"));
+			}
+		}
 		//=============================================================================================================================================================
 	}
 	// saves here
 	clearMenu();
 	cout << "Exiting" << endl;
+
+
+	//================================================================== For data log =================================================================================
 	if(sessionStorage && sessionData.size() > 1) {cout << "Writing session data" << endl; writeSessionData(sessionData); cout << "Session data written" << endl;}
+	//=================================================================================================================================================================
+
+
 	/*caseInfo.clear(); symptomList.clear();
 	for(int i = 0; i < symptoms.getSymptomCount(); i++) {symptomList.push_back(symptoms.getSymptom(i));}
 	for(int i = 0; i < cases.getCaseCount(); i++)
 	{
 		//
 	}*/
+	ofstream outfile;
+	outfile.open("symptom_test.txt");
+	writeSymptoms(symptoms, outfile);
+	outfile.close();
+	outfile.open("case_test.txt");
+	writeCaseData(cases, persons, outfile);
+	outfile.close();
+	cout << "Data written to files" << endl;
 	return 0;
 }
 
